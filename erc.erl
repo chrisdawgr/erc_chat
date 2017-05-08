@@ -37,6 +37,7 @@ client_censor(C,S,Words) ->
     free_of_word(Msg,Words)
     end}}.
 
+% For testing the history of the server
 populate_history(C,S,1) -> client_chat(C,S,"message");
 populate_history(C,S,Number) ->
   client_chat(C,S,"message" ++ integer_to_list(Number)),
@@ -46,6 +47,7 @@ get_history_len(C,S,Number) ->
   populate_history(C,S,Number),
   A = history(S),
   len(A).
+
 %%% Client API
 % Start the server
 start() -> startServ().
@@ -53,7 +55,6 @@ start() -> startServ().
 % Connect to a server with a username, this call creates a client
 % server, and asks the server to connect through startcli
 connect(Server, Username) ->
-  % Do it here
   spawn(fun() -> startcli(Username, Server) end).
 
 % Ask the client to connect, with the username Nick, start client
@@ -101,7 +102,7 @@ free_of_word(_,[]) -> true;
 free_of_word(String,[Word|Wordlist]) ->
   is_not_substring(String, Word) andalso free_of_word(String,Wordlist).
 
-%% Client Server:
+% Client Server (added for testing of the erc server)
 loop(Pid,Nick) ->
   receive
     % Connection was succesfull
@@ -111,11 +112,15 @@ loop(Pid,Nick) ->
     % Connection was unsuccesfull, break loop
     {error,Username, is_taken} ->
       io:format("Error: ~s is taken",[Username]),
-      loop(Pid, Nick);
-    % Received message, which is then printed
+    % Received broadcasted message, which is then printed
     {new_msg, From, Msg} ->
       io:format("[~s's client] - ~s: ~s~n", [Nick, From, Msg]),
       loop(Pid, Nick);
+    % in case server did not understand request from client
+    {From, {error,unknow_request,Other}} ->
+      io:format("Error: Server did not understand command: ~s",[Other]),
+      loop(Pid,Nick);
+    % handle other requests
     {From, Other} ->
       From ! {self(), {error,unknow_request, Other}},
       loop(Pid,Nick)

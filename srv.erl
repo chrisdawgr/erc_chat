@@ -17,7 +17,6 @@ handle_connect(Server,Request) ->
 startServ() -> spawn(fun () -> loop([],[],[]) end).
 
 %% Server:
-
 loop(State,History,Filter) ->
   % Create unique reference for newly connected user
   Ref = make_ref(),
@@ -39,7 +38,7 @@ loop(State,History,Filter) ->
       User = find(From,State),
       % add message to history
       Newhistory = add_msg(History,{User,Msg}),
-      % get recipients who can receive message based on their pred
+      % get recipients who can receive message based on their predicates
       Recipients = get_eligible_recepients({User,Msg},State,Filter),
       % broadcast only to eligible recipients
       broadcast(new_msg, Recipients, {User, Msg}),
@@ -49,8 +48,7 @@ loop(State,History,Filter) ->
       From ! {self(), History},
       loop(State,History,Filter);
     {From, filter,{replace, P}} ->
-      % Delete previous entries for user,
-      % add new filter to filterlist
+      % Delete previous entries for user and add new filter to filterlist
       Newfilter = [{From, P}] ++ delete_filter_entries(From, Filter),
       loop(State,History,Newfilter);
     {From, filter,{compose, P}} ->
@@ -100,21 +98,19 @@ not_exists([],_) -> true;
 not_exists([{Elem,_}|_],Elem) -> false;
 not_exists([{_,_} | T], Elem) -> not_exists(T, Elem).
 
-% Get lenght of list
+% Get length
 len([])    -> 0;
 len([_|T]) -> 1 + len(T).
 
-% Reverse list
+% Reverse
 reverse([]) -> [];
 reverse([H|T]) -> reverse(T) ++ [H].
 
 % Get tail of list
 tail([_|T]) -> T.
 
-% Drops the last element in the list by reversing the list, removing
-% The
+% Drops the last element in the list by reversing the list
 drop_last(List) -> reverse(tail(reverse(List))).
-
 
 %% Keep track of message history size
 add_msg(History,Msg) ->
